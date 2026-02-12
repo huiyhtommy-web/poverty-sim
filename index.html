@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香港基層家庭理財模擬器</title>
+    <!-- 網頁分頁圖示 (Favicon) - 使用 SVG 與 Emoji 動態生成 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪙</text></svg>">
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 React 與 ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- 引入 Babel 以在瀏覽器中編譯 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* 隱藏捲軸以美化介面 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .animate-bounce-custom { animation: bounce-custom 0.3s ease-in-out; }
+        @keyframes bounce-custom {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 overflow-x-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- SVG 圖示組件 ---
+        const IconHome = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+        const IconUtensils = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>;
+        const IconArrowRight = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
+        const IconBookOpen = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
+        const IconStethoscope = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>;
+        const IconAlertCircle = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
+        const IconCheckCircle = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>;
+        const IconShirt = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20.38 3.46 16 2a8 8 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>;
+        const IconActivity = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>;
+        const IconStar = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+        const IconUsers = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+        const IconHeartCrack = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="m12 13-1-1 2-2-3-3 2-2"/></svg>;
+        const IconCoin = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>;
+
+        const PovertySim = () => {
+            const INCOME = 11850;
+            
+            const [choices, setChoices] = useState({
+                housing: 0,
+                food: 0,
+                transport: 0,
+                education: 0,
+                medical: 0,
+                utilities: 0,
+                clothes: 0
+            });
+
+            const [showResult, setShowResult] = useState(false);
+            const [animationClass, setAnimationClass] = useState('');
+            
+            const categories = [
+                {
+                    id: 'housing',
+                    title: '1. 居住環境 (Housing)',
+                    icon: <IconHome className="w-5 h-5 text-blue-500" />,
+                    options: [
+                        { price: 7500, label: '舊樓兩房單位', desc: '雖然舊但有獨立房窗，位於市區。', quality: '尚可', impact: '', image: 'https://i.postimg.cc/cHX4hM2G/1.jpg' },
+                        { price: 4800, label: '深水埗劏房', desc: '120呎，廚廁合一。', quality: '惡劣', impact: '空間極度擠迫，油煙味重，兄妹無處轉身，容易因爭奪空間而吵架。', concept: '#空間貧窮', affects: { quality: 1, relationship: 1, health: 0.5 }, image: 'https://i.postimg.cc/HxBsz4Kf/2.jpg' },
+                        { price: 3500, label: '偏遠村屋/唐樓', desc: '新界偏遠地區或高層無升降機唐樓。', quality: '極差', impact: '雖然租金較低，但交通費高昂且通勤極長（時間貧窮）。若住高層唐樓，每日上落樓梯體力透支，且舊樓衛生環境較差，蚊蟲鼠患頻生。', concept: '#居住不公', affects: { quality: 1.2, relationship: 1, health: 1 }, image: 'https://i.postimg.cc/wv0T2cPn/3.jpg' }
+                    ]
+                },
+                {
+                    id: 'food',
+                    title: '2. 膳食開支 (Food)',
+                    icon: <IconUtensils className="w-5 h-5 text-orange-500" />,
+                    options: [
+                        { price: 4500, label: '街市買餸煮飯', desc: '堅持每日新鮮食材，三餸一湯。', quality: '健康', impact: '', image: 'https://i.postimg.cc/B6MQpcyV/4.jpg' },
+                        { price: 3000, label: '急凍與特價品', desc: '專攻超市特價與急凍肉自行煮食。', quality: '普通', impact: '營養攝取不均，長期食用急凍肉類，缺乏新鮮蔬果，孩子體質較弱。', concept: '#隱性飢餓', affects: { quality: 0.5, relationship: 0, health: 0.5 }, image: 'https://i.postimg.cc/gjjcTLFT/5.jpg' },
+                        { price: 3500, label: '廉價兩餸飯/快餐', desc: '因工作疲勞無暇煮食，全家吃平價外賣。', quality: '極差', impact: '雖然節省了時間，但長期攝取高油、高鹽、高糖食物（三高），缺乏膳食纖維，增加患長期病風險，且失去家庭飯桌的交流時光。', concept: '#食物不安全', affects: { quality: 0.8, relationship: 0.8, health: 1.2 }, image: 'https://i.postimg.cc/7hhPWJ8c/6.jpg' }
+                    ]
+                },
+                {
+                    id: 'transport',
+                    title: '3. 交通出行 (Transport)',
+                    icon: <IconArrowRight className="w-5 h-5 text-gray-500" />,
+                    options: [
+                        { price: 1200, label: '港鐵與巴士', desc: '正常通勤，確保睡眠時間。', quality: '正常', impact: '', image: 'https://i.postimg.cc/6qq6m4Jg/7.jpg' },
+                        { price: 100, label: '步行或踩單車', desc: '極限節省，無論多遠都盡量不搭車。', quality: '疲勞', impact: '日曬雨淋，極度消耗體力。在繁忙馬路邊行走或踏單車吸入廢氣，亦有交通安全風險。回家後累得無法與家人互動。', concept: '#時間貧窮', affects: { quality: 0.8, relationship: 1.2, health: 1 }, image: 'https://i.postimg.cc/rssyPR26/8.jpg' }
+                    ]
+                },
+                {
+                    id: 'education',
+                    title: '4. 子女教育 (Education)',
+                    icon: <IconBookOpen className="w-5 h-5 text-green-600" />,
+                    options: [
+                        { price: 2500, label: '補習與興趣班', desc: '專科補習 + 一項興趣（如畫畫）。', quality: '良好', impact: '', image: 'https://i.postimg.cc/6qq6m4xW/9.jpg' },
+                        { price: 1500, label: '只補主科', desc: '只補英文/數學，放棄興趣班。', quality: '基本', impact: '保住了學業基本盤，但生活只剩下讀書與考試。缺乏才藝發展，孩子在學校話題減少，生活單調乏味。', concept: '#發展權利剝奪', affects: { quality: 0.5, relationship: 0.5, health: 0.2 }, image: 'https://i.postimg.cc/mkkZ51W2/10.jpg' },
+                        { price: 500, label: '基本書簿雜費', desc: '完全不補習，依賴學校資源。', quality: '犧牲', impact: '父母無力指導功課，成績容易落後。因欠缺額外資源，產生嚴重學習焦慮與自卑感，陷入跨代貧窮循環。', concept: '#跨代貧窮', affects: { quality: 1, relationship: 0.8, health: 0.5 }, image: 'https://i.postimg.cc/NFFGz2vj/11.jpg' }
+                    ]
+                },
+                {
+                    id: 'medical',
+                    title: '5. 醫療健康 (Medical)',
+                    icon: <IconStethoscope className="w-5 h-5 text-red-500" />,
+                    options: [
+                        { price: 800, label: '私家診所', desc: '生病即看醫生，快速康復。', quality: '安心', impact: '', image: 'https://i.postimg.cc/3NNrc0Qy/12.jpg' },
+                        { price: 200, label: '公立門診', desc: '清晨排籌或輪候急症。', quality: '風險', impact: '需花費大量時間輪候，往往小病拖成大病。生病期間無法休息仍需照顧家庭，身心俱疲。', concept: '#醫療可達性', affects: { quality: 0.5, relationship: 0.5, health: 0.8 }, image: 'https://i.postimg.cc/Y0P2K2tC/13.jpg' },
+                        { price: 50, label: '成藥/忍痛', desc: '自行買藥或忍耐，不看醫生。', quality: '危險', impact: '缺乏專業診斷，存在誤診風險（如胃痛當消化不良）。長期痛症（如牙痛）導致脾氣暴躁，嚴重影響家庭和諧。', concept: '#健康不平等', affects: { quality: 1, relationship: 1.2, health: 1.5 }, image: 'https://i.postimg.cc/prSVbVPd/14.jpg' }
+                    ]
+                },
+                {
+                    id: 'utilities',
+                    title: '6. 水電煤網 (Utilities)',
+                    icon: <IconAlertCircle className="w-5 h-5 text-yellow-500" />,
+                    options: [
+                        { price: 1000, label: '舒適使用', desc: '夏天開冷氣、穩定寬頻。', quality: '舒適', impact: '', image: 'https://i.postimg.cc/x8ZjDj98/15.jpg' },
+                        { price: 700, label: '審慎使用', desc: '限時開冷氣，時刻留意電錶。', quality: '緊張', impact: '為了省電，即使熱也只開風扇，只有睡覺前才敢開一會冷氣。全家人精神緊張，時常為「誰忘了關燈」而爭吵。', concept: '#能源焦慮', affects: { quality: 0.5, relationship: 0.5, health: 0.2 }, image: 'https://i.postimg.cc/mknZfZTc/16.jpg' },
+                        { price: 400, label: '極限慳電/斷網', desc: '不開冷氣，取消家居寬頻。', quality: '艱苦', impact: '酷熱難眠影響精神及日間工作表現；數碼鴻溝導致孩子無法在家完成網上作業，學習進度落後。', concept: '#數碼鴻溝', affects: { quality: 1.2, relationship: 0.8, health: 1 }, image: 'https://i.postimg.cc/1XdRhRy0/17.jpg' }
+                    ]
+                },
+                {
+                    id: 'clothes',
+                    title: '7. 衣物鞋履 (Clothing)',
+                    icon: <IconShirt className="w-5 h-5 text-purple-500" />,
+                    options: [
+                        { price: 500, label: '季季添置', desc: '校服合身整潔，保持自信。', quality: '體面', impact: '', image: 'https://i.postimg.cc/1XdRhRyr/18.jpg' },
+                        { price: 200, label: '特價/平價網購', desc: '購買淘寶或特賣場衣物。', quality: '普通', impact: '質料較差或款式過時，鞋子容易磨腳。雖能蔽體，但在著重物質的朋輩圈子中可能會感到尷尬。', concept: '#物質匱乏', affects: { quality: 0.5, relationship: 0.2, health: 0.1 }, image: 'https://i.postimg.cc/HnNWDWTz/19.jpg' },
+                        { price: 0, label: '舊衣縫補', desc: '穿親戚舊衣，膠水黏鞋。', quality: '犧牲', impact: '校服發黃短小，被同學取笑，孩子因此抗拒上學，自我形象低落，產生社交退縮。', concept: '#社會標籤', affects: { quality: 1, relationship: 0.8, health: 0.5 }, image: 'https://i.postimg.cc/yxG6467v/20.jpg' }
+                    ]
+                }
+            ];
+
+            const totalExpenses = Object.keys(choices).reduce((acc, key) => {
+                const category = categories.find(c => c.id === key);
+                return acc + category.options[choices[key]].price;
+            }, 0);
+
+            const balance = INCOME - totalExpenses;
+            const isDeficit = balance < 0;
+
+            const handleSelect = (categoryId, optionIndex) => {
+                setChoices(prev => ({ ...prev, [categoryId]: optionIndex }));
+                setAnimationClass('animate-bounce-custom');
+                setTimeout(() => setAnimationClass(''), 300);
+            };
+
+            const calculateScores = () => {
+                let scores = { quality: 100, relationship: 100, health: 100 };
+                const MULTIPLIER = 15;
+                
+                Object.keys(choices).forEach(key => {
+                    const category = categories.find(c => c.id === key);
+                    const selectedOptionIndex = choices[key];
+                    
+                    if (selectedOptionIndex > 0 && category.options[selectedOptionIndex].affects) {
+                        const affects = category.options[selectedOptionIndex].affects;
+                        if (affects.quality) scores.quality -= (affects.quality * MULTIPLIER);
+                        if (affects.relationship) scores.relationship -= (affects.relationship * MULTIPLIER);
+                        if (affects.health) scores.health -= (affects.health * MULTIPLIER);
+                    }
+                });
+
+                return {
+                    quality: Math.max(0, scores.quality),
+                    relationship: Math.max(0, scores.relationship),
+                    health: Math.max(0, scores.health)
+                };
+            };
+
+            const scores = calculateScores();
+
+            const getScoreColor = (score) => {
+                if (score >= 80) return 'text-green-600';
+                if (score >= 50) return 'text-amber-500';
+                return 'text-red-600';
+            };
+
+            const getBarColor = (score) => {
+                if (score >= 80) return 'bg-green-500';
+                if (score >= 50) return 'bg-amber-400';
+                return 'bg-red-500';
+            };
+
+            const activeImpacts = categories
+                .filter(cat => choices[cat.id] > 0 && cat.options[choices[cat.id]].impact)
+                .map(cat => ({
+                    title: cat.title.split(' ')[1], 
+                    text: cat.options[choices[cat.id]].impact,
+                    icon: cat.icon,
+                    concept: cat.options[choices[cat.id]].concept,
+                    affects: cat.options[choices[cat.id]].affects
+                }));
+
+            return (
+                /* 優化響應式佈局：在手機版允許自然滾動 (無 h-screen)，在桌面版 (lg:) 套用左右分割與各自滾動 */
+                <div className="min-h-screen bg-gray-100 font-sans text-gray-800 flex flex-col lg:flex-row lg:h-screen lg:overflow-hidden">
+                    
+                    {/* LEFT COLUMN: Scrollable Content (Financials & Choices) */}
+                    <div className="flex-1 flex flex-col lg:h-full lg:overflow-y-auto relative">
+                        
+                        {/* COMPACT HEADER: 提高 z-index 確保在手機滑動時始終置頂 */}
+                        <header className="bg-slate-800 text-white p-3 sticky top-0 z-40 shadow-lg border-b-4 border-slate-600">
+                            <div className="max-w-3xl mx-auto w-full space-y-2">
+                                {/* Top Row: Title & Income */}
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-baseline gap-2">
+                                        <h1 className="text-base font-bold tracking-wide">貧窮模擬器</h1>
+                                        <span className="text-[10px] text-slate-400">目標：生存</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 bg-slate-700/50 px-2 py-1 rounded border border-slate-600">
+                                        <span className="text-[10px] text-slate-300 uppercase flex items-center gap-1">
+                                            <IconCoin className="w-3 h-3 text-yellow-400" />
+                                            固定月入
+                                        </span>
+                                        <span className="font-bold text-sm text-white">${INCOME.toLocaleString()}</span>
+                                    </div>
+                                </div>
+
+                                {/* Middle Row: Stats */}
+                                <div className="bg-slate-900/40 rounded-lg p-2 border border-slate-700 flex justify-between items-center">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-slate-400">預計結餘</span>
+                                        <span className={`text-2xl font-bold leading-none ${isDeficit ? 'text-red-400' : 'text-green-400'} ${animationClass} transition-all duration-300`}>
+                                            {balance > 0 ? '+' : ''}{balance.toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[10px] text-slate-400">總支出</span>
+                                        <span className="text-lg font-bold text-white leading-none">${totalExpenses.toLocaleString()}</span>
+                                    </div>
+                                </div>
+
+                                {/* Progress Bar */}
+                                <div className="relative h-1.5 w-full bg-slate-700 rounded-full overflow-hidden">
+                                    <div style={{ width: `${Math.min((totalExpenses / INCOME) * 100, 100)}%` }} className={`h-full transition-all duration-500 ${isDeficit ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                </div>
+
+                                {/* Warning Message */}
+                                {isDeficit ? (
+                                    <div className="bg-red-500/10 border border-red-500/50 text-red-200 px-2 py-1 rounded text-xs font-bold flex items-center justify-center gap-2">
+                                        <IconAlertCircle className="w-3 h-3 text-red-400" />
+                                        <span>警告：入不敷出！請選擇便宜選項。</span>
+                                    </div>
+                                ) : (
+                                    <div className="bg-green-500/10 border border-green-500/50 text-green-200 px-2 py-1 rounded text-xs font-bold flex items-center justify-center gap-2">
+                                        <IconCheckCircle className="w-3 h-3 text-green-400" />
+                                        <span>收支平衡。留意右側生活指數。</span>
+                                    </div>
+                                )}
+                            </div>
+                        </header>
+
+                        {/* Categories List */}
+                        <div className="p-4 space-y-4 pb-6 lg:pb-24 max-w-3xl mx-auto w-full mt-2">
+                            {categories.map((cat) => (
+                                <div key={cat.id} className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        {cat.icon}
+                                        <h3 className="font-bold text-lg">{cat.title}</h3>
+                                    </div>
+
+                                    {/* 響應式網格：手機 1 列，大螢幕 2 列 */}
+                                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                                        {cat.options.map((option, index) => {
+                                            const isSelected = choices[cat.id] === index;
+                                            let badgeColor = 'bg-green-500';
+                                            if (index === 1) badgeColor = 'bg-amber-500';
+                                            if (index === 2) badgeColor = 'bg-red-500';
+
+                                            return (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => handleSelect(cat.id, index)}
+                                                    className={`w-full text-left p-3 rounded-lg border-2 transition-all duration-200 relative group flex flex-col h-full ${isSelected ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
+                                                >
+                                                    {option.image && (
+                                                        <div className="mb-3 w-full bg-white rounded-md overflow-hidden border border-gray-100">
+                                                            <img src={option.image} alt={option.label} className="w-full h-40 object-cover mx-auto" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex flex-col gap-1 mb-2">
+                                                        <span className={`font-bold text-base ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}>{option.label}</span>
+                                                        <span className="font-mono font-bold text-slate-600 text-lg">${option.price.toLocaleString()}</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 flex-grow mb-2 leading-relaxed">{option.desc}</p>
+                                                    
+                                                    <div className="mt-auto pt-2 border-t border-gray-100 flex justify-between items-center">
+                                                        <span className={`text-[10px] text-white px-2 py-0.5 rounded-full ${badgeColor}`}>{option.quality}</span>
+                                                        {index > 0 && isSelected && (
+                                                            <span className="text-[10px] text-red-500 font-bold">{index === 1 ? '-分' : '--分'}</span>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: Quality of Life */}
+                    <div className="w-full lg:w-[400px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col h-auto lg:h-full shadow-[0_-10px_40px_rgba(0,0,0,0.05)] lg:shadow-2xl z-30">
+                        <div className="p-6 flex flex-col h-full lg:overflow-y-auto">
+                            
+                            {/* Status Scores Section */}
+                            <div className="mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-1">
+                                    <IconActivity className="text-slate-600 w-5 h-5" />
+                                    目前生活狀況指數
+                                </h2>
+                                <p className="text-xs text-gray-400 mb-4">初始 100 分，數值越低代表狀況越危急</p>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-sm font-bold text-gray-600 flex items-center gap-2"><IconStar className="w-4 h-4 text-amber-500" /> 生活品質</span>
+                                            <span className={`text-sm font-bold ${getScoreColor(scores.quality)}`}>{scores.quality.toFixed(0)}/100</span>
+                                        </div>
+                                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                            <div className={`h-full transition-all duration-500 ${getBarColor(scores.quality)}`} style={{ width: `${scores.quality}%` }}></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-sm font-bold text-gray-600 flex items-center gap-2"><IconUsers className="w-4 h-4 text-blue-500" /> 家庭關係</span>
+                                            <span className={`text-sm font-bold ${getScoreColor(scores.relationship)}`}>{scores.relationship.toFixed(0)}/100</span>
+                                        </div>
+                                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                            <div className={`h-full transition-all duration-500 ${getBarColor(scores.relationship)}`} style={{ width: `${scores.relationship}%` }}></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-sm font-bold text-gray-600 flex items-center gap-2"><IconHeartCrack className="w-4 h-4 text-red-500" /> 身心健康</span>
+                                            <span className={`text-sm font-bold ${getScoreColor(scores.health)}`}>{scores.health.toFixed(0)}/100</span>
+                                        </div>
+                                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                            <div className={`h-full transition-all duration-500 ${getBarColor(scores.health)}`} style={{ width: `${scores.health}%` }}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Impact Explanations */}
+                            <div className="flex-1 space-y-4">
+                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-2">當前選擇的結果</h3>
+                                {activeImpacts.length === 0 ? (
+                                    <div className="text-center py-4 text-gray-400 italic text-sm"><p>目前生活維持在理想狀態。</p></div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {activeImpacts.map((impact, idx) => (
+                                            <div key={idx} className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-red-400">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2 text-slate-700 font-bold">
+                                                        {impact.icon}<span>{impact.title}</span>
+                                                    </div>
+                                                    <div className="flex gap-1">
+                                                        {impact.affects?.quality > 0 && <IconStar className="w-3 h-3 text-amber-500" />}
+                                                        {impact.affects?.relationship > 0 && <IconUsers className="w-3 h-3 text-blue-500" />}
+                                                        {impact.affects?.health > 0 && <IconHeartCrack className="w-3 h-3 text-red-500" />}
+                                                    </div>
+                                                </div>
+                                                <p className="text-sm text-gray-600 leading-relaxed mb-2">{impact.text}</p>
+                                                {impact.concept && <span className="text-[10px] bg-red-50 text-red-600 border border-red-100 px-2 py-1 rounded inline-block">{impact.concept}</span>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Action Button */}
+                            <div className="mt-6 pt-6 border-t">
+                                <button 
+                                    onClick={() => setShowResult(true)}
+                                    disabled={isDeficit}
+                                    className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all transform active:scale-95 ${isDeficit ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+                                >
+                                    {isDeficit ? '請先消除赤字' : '確認月度預算'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Result Modal */}
+                    {showResult && (
+                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white rounded-2xl max-w-md w-full p-8 overflow-y-auto max-h-[90vh]">
+                                <h2 className="text-2xl font-bold mb-4 text-center">體驗總結</h2>
+                                <p className="text-gray-600 mb-6 text-center">您成功平衡了收支，但這是您家庭本月的生活狀態：</p>
+                                
+                                <div className="flex justify-around mb-6 text-center gap-2">
+                                    <div className="flex-1 bg-amber-50 p-2 rounded-lg">
+                                        <div className={`text-2xl font-bold ${getScoreColor(scores.quality)}`}>{scores.quality.toFixed(0)}</div>
+                                        <div className="text-xs text-gray-500">生活品質</div>
+                                    </div>
+                                    <div className="flex-1 bg-blue-50 p-2 rounded-lg">
+                                        <div className={`text-2xl font-bold ${getScoreColor(scores.relationship)}`}>{scores.relationship.toFixed(0)}</div>
+                                        <div className="text-xs text-gray-500">家庭關係</div>
+                                    </div>
+                                    <div className="flex-1 bg-red-50 p-2 rounded-lg">
+                                        <div className={`text-2xl font-bold ${getScoreColor(scores.health)}`}>{scores.health.toFixed(0)}</div>
+                                        <div className="text-xs text-gray-500">身心健康</div>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-3 mb-8 bg-gray-50 p-4 rounded-xl">
+                                    {activeImpacts.length > 0 ? activeImpacts.map((impact, i) => (
+                                        <div key={i} className="flex gap-3 text-sm text-gray-700">
+                                            <span className="text-red-500 mt-1 min-w-[10px]">●</span>
+                                            <span>{impact.text}</span>
+                                        </div>
+                                    )) : (
+                                        <p className="text-center text-green-600 font-bold">不可思議！您維持了完美的生活狀態！</p>
+                                    )}
+                                </div>
+                                <button onClick={() => setShowResult(false)} className="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">重新體驗</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<PovertySim />);
+    </script>
+</body>
+</html>
